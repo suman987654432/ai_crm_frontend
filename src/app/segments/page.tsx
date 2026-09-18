@@ -5,46 +5,9 @@ import { Plus, Search, PieChart } from 'lucide-react';
 import { Segment } from '@/components/segments/types';
 import SegmentsTable from '@/components/segments/SegmentsTable';
 import CreateSegmentModal from '@/components/segments/CreateSegmentModal';
+import { INITIAL_SEGMENTS, INITIAL_CONTACTS } from '@/data/dummyData';
 
-// Using dummy contacts to populate the modal checklist
-const DUMMY_CONTACTS = [
-  { id: 'c9a2f3b1-4d5e-6f7a-8b9c-0d1e2f3a4b5c', name: 'Rahul Sharma', email: 'rahul.s@example.com', phone: '+91 98765 43210', company: 'TechCorp India', createdAt: '2023-09-15', updatedAt: '2023-10-25', customData: {} },
-  { id: 'f8e7d6c5-b4a3-9f8e-7d6c-5b4a39f8e7d6', name: 'Priya Patel', email: 'priya.p@example.com', phone: '+91 87654 32109', company: 'Innovate Solutions', createdAt: '2023-10-24', updatedAt: '2023-10-24', customData: {} },
-  { id: '1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', name: 'Amit Kumar', email: 'amit.k@startup.in', phone: '+91 99887 76655', company: 'BuildFast', createdAt: '2023-08-10', updatedAt: '2023-10-20', customData: {} },
-  { id: 'd6c5b4a3-9f8e-7d6c-5b4a-39f8e7d6c5b4', name: 'Neha Gupta', email: 'neha.g@globalenterprises.com', phone: '+91 77665 54433', company: 'Global Enterprises', createdAt: '2023-09-01', updatedAt: '2023-10-15', customData: {} },
-  { id: '4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a', name: 'Vikram Singh', email: 'vikram.s@logistics.net', phone: '+91 88776 65544', company: 'FastTrack Logistics', createdAt: '2023-10-05', updatedAt: '2023-10-26', customData: {} },
-  { id: '7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d', name: 'Sneha Desai', email: 'sneha.d@retailgiant.com', phone: '+91 99001 12233', company: 'RetailGiant', createdAt: '2023-07-20', updatedAt: '2023-09-30', customData: {} },
-];
 
-const INITIAL_SEGMENTS: Segment[] = [
-  {
-    id: 's-9f8e7d6c-5b4a-39f8-e7d6-c5b4a39f8e7d',
-    name: 'VIP Customers',
-    contactIds: ['c9a2f3b1-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'f8e7d6c5-b4a3-9f8e-7d6c-5b4a39f8e7d6', 'd6c5b4a3-9f8e-7d6c-5b4a-39f8e7d6c5b4'],
-    usedIn: ['Diwali Promo', 'Q4 Newsletter'],
-    isActive: true,
-    createdAt: '2023-10-01',
-    updatedAt: '2023-10-20',
-  },
-  {
-    id: 's-1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d',
-    name: 'Cold Leads',
-    contactIds: ['1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', '4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a'],
-    usedIn: ['Re-engagement Campaign'],
-    isActive: true,
-    createdAt: '2023-09-15',
-    updatedAt: '2023-10-25',
-  },
-  {
-    id: 's-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d',
-    name: 'Startups India',
-    contactIds: ['1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', '7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d'],
-    usedIn: [],
-    isActive: false,
-    createdAt: '2023-10-10',
-    updatedAt: '2023-10-15',
-  }
-];
 
 export default function SegmentsPage() {
   const [segments, setSegments] = useState<Segment[]>(INITIAL_SEGMENTS);
@@ -142,7 +105,7 @@ export default function SegmentsPage() {
       {isModalOpen && (
         <CreateSegmentModal 
           segment={segmentToEdit}
-          allContacts={DUMMY_CONTACTS}
+          allContacts={INITIAL_CONTACTS}
           onSave={handleSaveSegment}
           onClose={() => setIsModalOpen(false)}
         />
