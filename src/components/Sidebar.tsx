@@ -109,7 +109,7 @@ export default function Sidebar() {
               </h3>
             )}
             {group.items.map((item) => {
-              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
               return (
                 <Link
                   key={item.name}
@@ -137,7 +137,7 @@ export default function Sidebar() {
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isBottomMenuOpen && !isCollapsed ? 'max-h-64 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'}`}>
           <div className="rounded-lg  p-2  space-y-1">
             {bottomNavigation.map((item) => {
-              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
               return (
                 <Link
                   key={item.name}
