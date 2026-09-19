@@ -48,3 +48,122 @@ export const INITIAL_SEGMENTS: Segment[] = [
     updatedAt: '2023-10-15',
   }
 ];
+
+export const DUMMY_AGENTS = [
+  { id: 'agent-1', name: 'Sales Follow-up Agent', language: 'Hindi + English', tone: 'Professional', type: 'Outbound Sales' },
+  { id: 'agent-2', name: 'Customer Support Bot', language: 'English', tone: 'Friendly', type: 'Inbound Support' },
+  { id: 'agent-3', name: 'Feedback Collection', language: 'Hindi', tone: 'Casual', type: 'Survey' },
+];
+
+export const AVAILABLE_NUMBERS = [
+  '+91 98765 43210',
+  '+91 87654 32109',
+  '+91 99887 76655',
+];
+
+export const INITIAL_CAMPAIGNS: import('@/components/campaigns/types').Campaign[] = [
+  {
+    id: 'camp-1',
+    name: 'Inactive Customer Follow-up',
+    description: 'Re-engage customers who haven\'t purchased recently',
+    status: 'Running',
+    agentName: 'Sales Follow-up Agent',
+    segmentName: 'Inactive Customers',
+    totalContacts: 1240,
+    callsCompleted: 892,
+    stats: {
+      interested: 124,
+      callback: 86,
+      noAnswer: 310
+    },
+    scheduleDate: '25 Sep 2026',
+    scheduleTime: '10:00 AM (IST)',
+    phoneNumber: '+91 98765 43210',
+    lastActivity: 'Last activity 5 minutes ago'
+  },
+  {
+    id: 'camp-2',
+    name: 'Q3 Feature Announcement',
+    description: 'Call our top users to inform them of the new AI features',
+    status: 'Scheduled',
+    agentName: 'Customer Support Bot',
+    segmentName: 'VIP Customers',
+    totalContacts: 450,
+    callsCompleted: 0,
+    stats: {
+      interested: 0,
+      callback: 0,
+      noAnswer: 0
+    },
+    scheduleDate: '28 Sep 2026',
+    scheduleTime: '02:00 PM (IST)',
+    phoneNumber: '+91 87654 32109'
+  },
+  {
+    id: 'camp-3',
+    name: 'Feedback Survey - June',
+    description: 'Ask startups about their experience with the Q2 program',
+    status: 'Completed',
+    agentName: 'Feedback Collection',
+    segmentName: 'Startups India',
+    totalContacts: 850,
+    callsCompleted: 850,
+    stats: {
+      interested: 320,
+      callback: 10,
+      noAnswer: 40
+    },
+    scheduleDate: '10 Jun 2026',
+    scheduleTime: '11:00 AM (IST)',
+    phoneNumber: '+91 99887 76655',
+    lastActivity: 'Completed on 12 Jun 2026'
+  }
+];
+
+export const INITIAL_CALLS: import('@/components/calls/types').Call[] = [
+  {
+    id: 'call-001',
+    contactName: 'Rahul Sharma',
+    phoneNumber: '+91 98765 43210',
+    agentName: 'Sales Follow-up Agent',
+    campaignName: 'Inactive Customer Follow-up',
+    callDateTime: '2023-10-25T10:30:00Z',
+    duration: '04:12',
+    status: 'Completed',
+    transcript: 'Agent: Hello, am I speaking with Rahul?\nUser: Yes, speaking.\nAgent: Hi Rahul, I am calling from TechCorp regarding your recent interest in our premium subscription. Are you free to chat for a minute?\nUser: Yes, tell me.\nAgent: We have a special Diwali offer running... (transcript truncated)',
+    recordingUrl: '#'
+  },
+  {
+    id: 'call-002',
+    contactName: 'Priya Patel',
+    phoneNumber: '+91 87654 32109',
+    agentName: 'Customer Support Bot',
+    campaignName: 'Q3 Feature Announcement',
+    callDateTime: '2023-10-25T11:05:00Z',
+    duration: '00:45',
+    status: 'Missed',
+    transcript: 'Voicemail detected. Call ended.',
+  },
+  {
+    id: 'call-003',
+    contactName: 'Amit Kumar',
+    phoneNumber: '+91 99887 76655',
+    agentName: 'Feedback Collection',
+    campaignName: 'Feedback Survey - June',
+    callDateTime: '2023-10-26T14:20:00Z',
+    duration: '02:30',
+    status: 'Completed',
+    transcript: 'Agent: Hi Amit, how was your experience with BuildFast recently?\nUser: It was quite good, I liked the new UI.',
+    recordingUrl: '#'
+  },
+  {
+    id: 'call-004',
+    contactName: 'Neha Gupta',
+    phoneNumber: '+91 77665 54433',
+    agentName: 'Sales Follow-up Agent',
+    campaignName: 'Inactive Customer Follow-up',
+    callDateTime: '2023-10-26T15:10:00Z',
+    duration: '00:00',
+    status: 'Failed',
+  }
+];
