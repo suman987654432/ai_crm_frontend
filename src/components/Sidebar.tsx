@@ -23,17 +23,34 @@ import {
   ChevronsUpDown,
 } from 'lucide-react';
 
-const mainNavigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'AI Agents', href: '/agents', icon: Bot },
-  { name: 'Workflows', href: '/workflows', icon: Zap },
-  { name: 'Contacts', href: '/contacts', icon: Users },
-  { name: 'Segments', href: '/segments', icon: PieChart },
-  { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
-  { name: 'Calls', href: '/calls', icon: PhoneCall },
-  { name: 'Appointments', href: '/appointments', icon: Calendar },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { name: 'Analytics', href: '/analytics', icon: BarChart2 },
+const navigationGroups = [
+  {
+    title: 'Overview',
+    items: [
+      { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    ]
+  },
+  {
+    title: 'Automation',
+    items: [
+      { name: 'AI Agents', href: '/agents', icon: Bot },
+      { name: 'Workflows', href: '/workflows', icon: Zap },
+    ]
+  },
+  {
+    title: 'Audience',
+    items: [
+      { name: 'Contacts', href: '/contacts', icon: Users },
+      { name: 'Segments', href: '/segments', icon: PieChart },
+    ]
+  },
+  {
+    title: 'Engagement',
+    items: [
+      { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
+      { name: 'Calls', href: '/calls', icon: PhoneCall },
+    ]
+  }
 ];
 
 const bottomNavigation = [
@@ -83,29 +100,36 @@ export default function Sidebar() {
       </div>
 
       {/* Main Navigation */}
-      <div className="flex flex-1 flex-col overflow-y-auto px-3 py-6 space-y-8 custom-scrollbar">
-        <nav className="flex flex-col space-y-1">
-          {mainNavigation.map((item) => {
-            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                title={isCollapsed ? item.name : undefined}
-                className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive
-                  ? 'bg-[#2d2d2d] text-white'
-                  : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-white'
-                  } ${isCollapsed ? 'justify-center' : ''}`}
-              >
-                <item.icon
-                  className={`h-5 w-5 shrink-0 ${isActive ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'}`}
-                  aria-hidden="true"
-                />
-                {!isCollapsed && <span>{item.name}</span>}
-              </Link>
-            );
-          })}
-        </nav>
+      <div className="flex flex-1 flex-col overflow-y-auto px-3 py-6 space-y-6 custom-scrollbar">
+        {navigationGroups.map((group) => (
+          <div key={group.title} className="flex flex-col space-y-1">
+            {!isCollapsed && (
+              <h3 className="px-3 text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                {group.title}
+              </h3>
+            )}
+            {group.items.map((item) => {
+              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  title={isCollapsed ? item.name : undefined}
+                  className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive
+                    ? 'bg-[#2d2d2d] text-white shadow-sm'
+                    : 'text-gray-400 hover:bg-[#252525] hover:text-white'
+                    } ${isCollapsed ? 'justify-center' : ''}`}
+                >
+                  <item.icon
+                    className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'}`}
+                    aria-hidden="true"
+                  />
+                  {!isCollapsed && <span>{item.name}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Bottom Menu */}

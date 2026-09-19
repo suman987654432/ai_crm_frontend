@@ -1,6 +1,12 @@
+"use client";
+
 import React, { useMemo, useState } from 'react';
-import { Edit2, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Contact, CustomField } from './types';
+import { 
+  ArrowUpDown, ArrowUp, ArrowDown, 
+  FileText, Play, Trash2, Phone, Mic, MoreVertical, 
+  CheckCircle2, AlertCircle, PhoneOff, PauseCircle 
+} from 'lucide-react';
+import { Call, CallStatus } from './types';
 import { CopyableId } from '@/components/common/CopyableId';
 import {
   useReactTable,
@@ -13,100 +19,143 @@ import {
   SortingState,
 } from '@tanstack/react-table';
 
-interface ContactsTableProps {
-  contacts: Contact[];
-  customFields: CustomField[];
+interface CallsTableProps {
+  calls: Call[];
   globalFilter: string;
-  onRowClick: (contact: Contact) => void;
-  onEdit: (contact: Contact) => void;
-  onDelete: (contact: Contact) => void;
+  onViewTranscript: (call: Call) => void;
+  onViewDetails: (call: Call) => void;
+  onDelete: (call: Call) => void;
 }
 
-export default function ContactsTable({
-  contacts,
-  customFields,
-  globalFilter,
-  onRowClick,
-  onEdit,
-  onDelete
-}: ContactsTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+const getStatusBadge = (status: CallStatus) => {
+  switch (status) {
+    case 'Completed':
+      return { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/20', icon: CheckCircle2 };
+    case 'Failed':
+      return { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', icon: AlertCircle };
+    case 'Missed':
+      return { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20', icon: PhoneOff };
+    case 'Ongoing':
+      return { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20', icon: Phone };
+    case 'Voicemail':
+      return { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20', icon: Mic };
+    default:
+      return { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20', icon: PauseCircle };
+  }
+};
 
-  const columnHelper = createColumnHelper<Contact>();
+export default function CallsTable({
+  calls,
+  globalFilter,
+  onViewTranscript,
+  onViewDetails,
+  onDelete
+}: CallsTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const columnHelper = createColumnHelper<Call>();
 
   const columns = useMemo(() => {
-    // 1. Sticky Name Column
-    const baseColumns = [
+    return [
       columnHelper.accessor('id', {
         header: 'ID',
         cell: info => <CopyableId id={info.getValue()} displayId={`${info.getValue().substring(0, 8)}...`} />,
       }),
-      columnHelper.accessor('name', {
-        header: 'Name',
+      columnHelper.accessor('contactName', {
+        header: 'Contact Name',
         cell: info => <span className="font-medium text-white">{info.getValue()}</span>,
       }),
-      columnHelper.accessor('phone', {
-        header: 'Phone',
+      columnHelper.accessor('phoneNumber', {
+        header: 'Phone Number',
         cell: info => info.getValue(),
       }),
-      columnHelper.accessor('email', {
-        header: 'Email',
+      columnHelper.accessor('agentName', {
+        header: 'AI Agent',
         cell: info => info.getValue(),
       }),
-      columnHelper.accessor('company', {
-        header: 'Company',
+      columnHelper.accessor('campaignName', {
+        header: 'Campaign',
         cell: info => info.getValue(),
       }),
-      columnHelper.accessor('createdAt', {
-        header: 'Created At',
-        cell: info => info.getValue(),
+      columnHelper.accessor('callDateTime', {
+        header: 'Date & Time',
+        cell: info => new Date(info.getValue()).toLocaleString('en-US', { 
+          month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' 
+        }),
       }),
-      columnHelper.accessor('updatedAt', {
-        header: 'Updated At',
-        cell: info => info.getValue(),
+      columnHelper.accessor('duration', {
+        header: 'Duration',
+        cell: info => info.getValue() || '-',
+      }),
+      columnHelper.accessor('status', {
+        header: 'Status',
+        cell: info => {
+          const status = info.getValue();
+          const badge = getStatusBadge(status);
+          const Icon = badge.icon;
+          return (
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${badge.bg} ${badge.text} ${badge.border}`}>
+              <Icon className="h-3 w-3" />
+              {status}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor('transcript', {
+        header: 'Transcript',
+        cell: ({ row }) => row.original.transcript ? (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onViewTranscript(row.original); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#252525] border border-[#3d3d3d] text-gray-300 hover:text-white hover:bg-[#2d2d2d] rounded-md transition-colors"
+          >
+            <FileText className="h-4 w-4" /> Transcript
+          </button>
+        ) : <span className="text-gray-600">-</span>,
+      }),
+      columnHelper.accessor('recordingUrl', {
+        header: 'Recording',
+        cell: ({ row }) => {
+          const isPlaying = playingId === row.original.id;
+          return row.original.recordingUrl ? (
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setPlayingId(isPlaying ? null : row.original.id);
+                // Real implementation would use an <audio> ref
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                isPlaying 
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                  : 'bg-[#252525] text-gray-300 border-[#3d3d3d] hover:bg-[#2d2d2d]'
+              }`}
+            >
+              {isPlaying ? <PauseCircle className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isPlaying ? 'Playing...' : 'Play'}
+            </button>
+          ) : <span className="text-gray-600">-</span>;
+        }
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center gap-1">
+            <button 
+              onClick={(e) => { e.stopPropagation(); onDelete(row.original); }}
+              className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-[#333333] rounded transition-colors" 
+              title="Delete Call Record"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
       }),
     ];
-
-    // 2. Dynamic Custom Field Columns
-    const dynamicColumns = customFields
-      .filter(cf => cf.showInTable)
-      .map(cf => 
-        columnHelper.accessor(row => row.customData[cf.id] || '-', {
-          id: cf.id,
-          header: cf.name,
-          cell: info => info.getValue(),
-        })
-      );
-
-    // 3. Sticky Actions Column
-    const actionsColumn = columnHelper.display({
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-1 transition-opacity">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onEdit(row.original); }}
-            className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-[#333333] rounded transition-colors" 
-            title="Edit Contact"
-          >
-            <Edit2 className="h-4 w-4" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete(row.original); }}
-            className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-[#333333] rounded transition-colors" 
-            title="Delete Contact"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      ),
-    });
-
-    return [...baseColumns, ...dynamicColumns, actionsColumn];
-  }, [customFields, onEdit, onDelete]);
+  }, [onViewTranscript, onViewDetails, onDelete, playingId]);
 
   const table = useReactTable({
-    data: contacts,
+    data: calls,
     columns,
     state: {
       sorting,
@@ -118,9 +167,8 @@ export default function ContactsTable({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
-      pagination: {
-        pageSize: 10,
-      },
+      pagination: { pageSize: 10 },
+      sorting: [{ id: 'callDateTime', desc: true }]
     },
   });
 
@@ -136,17 +184,8 @@ export default function ContactsTable({
                   const isLast = index === headerGroup.headers.length - 1;
                   
                   let cellClasses = "px-6 py-4 border-b border-[#333333] bg-[#1c1c1c]";
-                  if (isFirst) {
-                    cellClasses += " sticky left-0 z-30 shadow-[1px_0_0_0_#333333]";
-                  }
-                  if (isLast) {
-                    cellClasses = "px-4 py-4 border-b border-[#333333] bg-[#1c1c1c] sticky right-0 z-30 shadow-[-1px_0_0_0_#333333] text-center";
-                  }
-
-                  // Handle Custom Field Header Styling
-                  if (!isFirst && !isLast && header.id.startsWith('cf_')) {
-                    cellClasses += " text-indigo-300/80";
-                  }
+                  if (isFirst) cellClasses += " sticky left-0 z-30 shadow-[1px_0_0_0_#333333]";
+                  if (isLast) cellClasses = "px-4 py-4 border-b border-[#333333] bg-[#1c1c1c] sticky right-0 z-30 shadow-[-1px_0_0_0_#333333] text-center";
 
                   return (
                     <th key={header.id} className={cellClasses}>
@@ -174,21 +213,14 @@ export default function ContactsTable({
           </thead>
           <tbody>
             {table.getRowModel().rows.map(row => (
-              <tr 
-                key={row.id} 
-                className="hover:bg-[#1a1a1a] transition-colors group border-b border-[#222222] last:border-b-0"
-              >
+              <tr key={row.id} className="hover:bg-[#1a1a1a] transition-colors group cursor-pointer border-b border-[#222222] last:border-b-0" onClick={() => onViewDetails(row.original)}>
                 {row.getVisibleCells().map((cell, index) => {
                   const isFirst = index === 0;
                   const isLast = index === row.getVisibleCells().length - 1;
                   
                   let cellClasses = "px-6 py-4 text-sm text-gray-400";
-                  if (isFirst) {
-                    cellClasses = "px-6 py-4 sticky left-0 bg-[#121212] group-hover:bg-[#1a1a1a] z-10 shadow-[1px_0_0_0_#222222] transition-colors hover:text-indigo-400";
-                  }
-                  if (isLast) {
-                    cellClasses = "px-4 py-4 text-center sticky right-0 bg-[#121212] group-hover:bg-[#1a1a1a] z-10 shadow-[-1px_0_0_0_#222222] transition-colors cursor-default";
-                  }
+                  if (isFirst) cellClasses = "px-6 py-4 sticky left-0 bg-[#121212] group-hover:bg-[#1a1a1a] z-10 shadow-[1px_0_0_0_#222222] transition-colors hover:text-indigo-400";
+                  if (isLast) cellClasses = "px-4 py-4 text-center sticky right-0 bg-[#121212] group-hover:bg-[#1a1a1a] z-10 shadow-[-1px_0_0_0_#222222] transition-colors cursor-default";
 
                   return (
                     <td key={cell.id} className={cellClasses} onClick={(e) => isLast && e.stopPropagation()}>
@@ -199,11 +231,10 @@ export default function ContactsTable({
               </tr>
             ))}
             
-            {/* Empty State / Padding */}
             {table.getRowModel().rows.length === 0 && (
               <tr>
                 <td colSpan={columns.length} className="px-6 py-8 text-center text-sm text-gray-500 bg-[#121212]">
-                  No contacts found matching your search.
+                  No calls found matching your search.
                 </td>
               </tr>
             )}
@@ -211,7 +242,7 @@ export default function ContactsTable({
         </table>
       </div>
       
-      {/* Fixed Pagination Footer */}
+      {/* Footer / Pagination */}
       <div className="flex items-center justify-between px-6 py-3 bg-[#121212] border-t border-[#333333] shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-400">
@@ -220,15 +251,11 @@ export default function ContactsTable({
           </span>
           <select
             value={table.getState().pagination.pageSize}
-            onChange={e => {
-              table.setPageSize(Number(e.target.value))
-            }}
+            onChange={e => table.setPageSize(Number(e.target.value))}
             className="ml-4 bg-[#121212] border border-[#333333] rounded px-2 py-1 text-sm text-gray-300 focus:outline-none focus:border-indigo-500"
           >
             {[10, 20, 30, 40, 50].map(pageSize => (
-              <option key={pageSize} value={pageSize}>
-                Show {pageSize}
-              </option>
+              <option key={pageSize} value={pageSize}>Show {pageSize}</option>
             ))}
           </select>
         </div>
