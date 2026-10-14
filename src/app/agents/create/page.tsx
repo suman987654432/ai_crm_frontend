@@ -25,7 +25,7 @@ function WizardContent() {
   const [selectedVoice, setSelectedVoice] = useState('Priya');
   const [agentName, setAgentName] = useState('');
   const [category, setCategory] = useState('Sales & Lead Gen');
-  const [language, setLanguage] = useState('Hindi + English (Hinglish)');
+  const [language, setLanguage] = useState('English Only)');
   const [primaryGoal, setPrimaryGoal] = useState('');
   const [isDeploying, setIsDeploying] = useState(false);
 
@@ -60,9 +60,9 @@ function WizardContent() {
             const agent = data.data;
             setAgentName(agent.name || '');
             setCategory(agent.category || 'Sales & Lead Gen');
-            setLanguage(agent.language || 'Hindi + English (Hinglish)');
+            setLanguage(agent.language || 'English Only)');
             setPrimaryGoal(agent.primary_goal || '');
-            
+
             if (agent.ai_config) {
               setInstructionText(agent.ai_config.system_prompt || instructionText);
             }
@@ -278,11 +278,11 @@ Guidelines:
                     <h2 className="text-2xl font-semibold text-white">Voice Selection</h2>
                     <p className="text-gray-400 mt-1">Choose how your AI agent will sound to customers on the phone.</p>
                   </div>
-                  
+
                   {/* Gender Filter */}
                   <div className="flex bg-[#252525] rounded-md p-1 border border-[#333333]">
                     {['All', 'Female', 'Male'].map(gender => (
-                      <button 
+                      <button
                         key={gender}
                         onClick={() => setGenderFilter(gender)}
                         className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-colors ${genderFilter === gender ? 'bg-[#333333] text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
@@ -298,7 +298,7 @@ Guidelines:
                     <label className="block text-sm font-medium text-gray-300 mb-2">Select Voice Profile</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[220px] overflow-y-auto custom-scrollbar pr-2">
                       {availableVoices.filter(v => genderFilter === 'All' || v.gender === genderFilter).map(voice => (
-                        <div 
+                        <div
                           key={voice.voiceId}
                           onClick={() => setSelectedVoice(voice.voiceId)}
                           className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedVoice === voice.voiceId ? 'bg-indigo-500/10 border-indigo-500' : 'bg-[#1c1c1c] border-[#333333] hover:border-[#555555]'}`}
@@ -308,9 +308,9 @@ Guidelines:
                         </div>
                       ))}
                       {availableVoices.length === 0 && (
-                         <div className="col-span-full p-4 text-center text-gray-500 text-sm border border-[#333333] rounded-lg border-dashed">
-                           Loading voices...
-                         </div>
+                        <div className="col-span-full p-4 text-center text-gray-500 text-sm border border-[#333333] rounded-lg border-dashed">
+                          Loading voices...
+                        </div>
                       )}
                     </div>
                   </div>
@@ -584,7 +584,7 @@ Guidelines:
                         primary_goal: primaryGoal,
                         ai_config: {
                           llm_provider: 'gemini',
-                          llm_model: 'gemini-flash',
+                          llm_model: 'gemini-3.5-flash-lite',
                           system_prompt: instructionText
                         },
                         voice_config: {

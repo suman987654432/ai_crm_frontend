@@ -21,8 +21,12 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   
   const IS_RECORDING_REF = useRef(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     // 1. Initialize Test Session
     fetch(`http://localhost:5000/api/v1/agents/${agent.id}/test-session`, { method: 'POST' })
       .then(res => res.json())
@@ -65,7 +69,16 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
       } else if (data.type === 'user_transcript') {
         setTranscript(prev => [...prev, { role: 'You', text: data.text, timestamp: Date.now() }]);
       } else if (data.type === 'ai_transcript') {
-        setTranscript(prev => [...prev, { role: 'AI', text: data.text, timestamp: Date.now() }]);
+        setTranscript(prev => {
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg && lastMsg.role === 'AI') {
+            const newPrev = [...prev];
+            newPrev[newPrev.length - 1] = { ...lastMsg, text: data.text, timestamp: Date.now() };
+            return newPrev;
+          } else {
+            return [...prev, { role: 'AI', text: data.text, timestamp: Date.now() }];
+          }
+        });
       } else if (data.type === 'audio') {
         playAudioBuffer(data.audio);
       } else if (data.type === 'error') {
@@ -101,11 +114,15 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         if (chunksRef.current.length > 0) {
-          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          const t0 = performance.now();
+          const mimeType = mediaRecorder.mimeType || 'audio/webm';
+          const blob = new Blob(chunksRef.current, { type: mimeType });
           chunksRef.current = []; // reset
+          
           sendAudioToBackend(blob);
+          console.log(`[Frontend Audio] Captured & prepared in ${(performance.now() - t0).toFixed(1)}ms (${(blob.size / 1024).toFixed(1)} KB)`);
         }
       };
 
@@ -150,7 +167,7 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
       let average = sum / dataArray.length;
 
       // Extremely simple VAD
-      if (average > 15) {
+      if (average > 10) {
         // Speech detected
         if (silenceTimerRef.current) {
           clearTimeout(silenceTimerRef.current);
@@ -160,9 +177,9 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
         // Silence detected
         if (!silenceTimerRef.current) {
           silenceTimerRef.current = setTimeout(() => {
-            // Silence threshold reached (e.g., 1.5 seconds)
+            // Snappy silence detection: 450ms after speech stops
             stopRecording();
-          }, 1500);
+          }, 450);
         }
       }
 
@@ -183,13 +200,49 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
     };
   };
 
+  const nextAudioStartTimeRef = useRef(0);
+  const audioSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+
   const playAudioBuffer = (base64Audio: string) => {
-    const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`);
-    audioPlayerRef.current = audio;
-    audio.play();
-    audio.onended = () => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'interruption' })); // Basically just telling backend we finished TTS
+    if (!audioContextRef.current) return;
+    const ctx = audioContextRef.current;
+    
+    // Decode base64 linear16 (PCM) to Float32
+    const binary = atob(base64Audio);
+    const int16Array = new Int16Array(binary.length / 2);
+    for (let i = 0; i < binary.length; i += 2) {
+      // Sarvam sends little-endian PCM
+      int16Array[i / 2] = binary.charCodeAt(i) | (binary.charCodeAt(i + 1) << 8);
+    }
+    
+    const float32Array = new Float32Array(int16Array.length);
+    for (let i = 0; i < int16Array.length; i++) {
+      float32Array[i] = int16Array[i] / 32768.0;
+    }
+
+    const audioBuffer = ctx.createBuffer(1, float32Array.length, 24000);
+    audioBuffer.getChannelData(0).set(float32Array);
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    
+    if (nextAudioStartTimeRef.current < ctx.currentTime) {
+      nextAudioStartTimeRef.current = ctx.currentTime;
+    }
+    
+    source.start(nextAudioStartTimeRef.current);
+    nextAudioStartTimeRef.current += audioBuffer.duration;
+    audioSourcesRef.current.push(source);
+
+    // On final chunk ended, we can resume listening. For simplicity, we just clear sources on end Test.
+    source.onended = () => {
+      audioSourcesRef.current = audioSourcesRef.current.filter(s => s !== source);
+      // If nothing is playing in the future and queue is empty, we are done
+      if (audioSourcesRef.current.length === 0 && ctx.currentTime >= nextAudioStartTimeRef.current) {
+         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+           wsRef.current.send(JSON.stringify({ type: 'interruption' }));
+         }
       }
     };
   };
@@ -198,9 +251,12 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
     stopRecording();
     IS_RECORDING_REF.current = false;
     
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-    }
+    audioSourcesRef.current.forEach(source => {
+      try { source.stop(); } catch(e){}
+    });
+    audioSourcesRef.current = [];
+    nextAudioStartTimeRef.current = 0;
+    
     if (wsRef.current) {
       wsRef.current.close();
     }
@@ -282,10 +338,16 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
         <h3 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-6">Live Transcript</h3>
         
         <div className="flex-1 overflow-y-auto space-y-6 pr-4 custom-scrollbar">
-          {transcript.map((msg, i) => (
+          {transcript.map((msg, i) => {
+            const timeString = new Date(msg.timestamp).toLocaleString('en-US', { 
+              weekday: 'short', 
+              hour: 'numeric', 
+              minute: '2-digit'
+            });
+            return (
             <div key={i} className={`flex flex-col ${msg.role === 'You' ? 'items-end' : 'items-start'}`}>
-              <span className="text-[10px] text-gray-500 font-medium mb-1 tracking-wide uppercase">
-                {msg.role}
+              <span className="text-[10px] text-gray-500 font-medium mb-1 tracking-wide uppercase flex items-center gap-1">
+                {msg.role} <span className="text-[9px] opacity-70 lowercase">• {timeString}</span>
               </span>
               <div className={`px-4 py-2.5 rounded-2xl max-w-[80%] ${
                 msg.role === 'You' 
@@ -295,7 +357,7 @@ export default function VoicePlayground({ agent, onClose }: VoicePlaygroundProps
                 {msg.text}
               </div>
             </div>
-          ))}
+          )})}
           
           {transcript.length === 0 && status !== 'initializing' && status !== 'error' && (
             <div className="h-full flex items-center justify-center text-gray-500 text-sm">

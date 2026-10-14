@@ -57,7 +57,7 @@ const bottomNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Integrations', href: '/integrations', icon: Plug },
   { name: 'Billing', href: '/billing', icon: CreditCard },
-  { name: 'User Profile', href: '/profile', icon: User },
+  { name: 'Profile', href: '/profile', icon: User },
 ];
 
 export default function Sidebar() {

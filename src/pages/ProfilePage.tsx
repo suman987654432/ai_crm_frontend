@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 export default function ProfilePage() {
   return (
     <PageLayout>
-      <PageHeader title="User Profile" />
+      <PageHeader title="Profile" />
       <EmptyState />
     </PageLayout>
   );
